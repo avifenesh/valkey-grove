@@ -1,36 +1,48 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101512"><meta name="description" content="A living fractal map of your Valkey cluster. Follow each key from its hash slot to its home."><title>Valkey Grove · The shape of your data</title><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101916"><meta name="description" content="A living fractal map of your Valkey cluster. Follow each key from its hash slot to its home."><title>Valkey Grove · The shape of your data</title><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"></head>
 <body>
-<header class="topbar"><a class="brand" href="./" aria-label="Valkey Grove home"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M18 31V15M18 24L8 14M18 24L28 14M18 16L12 10M18 16L24 10M8 14V7M8 14H2M28 14V7M28 14H34M18 15V3"/></svg><span>valkey <b>grove</b></span></a><span class="tagline">THE SHAPE OF YOUR DATA</span><div class="top-actions"><span class="connection" id="connection"><i></i> Connecting</span><button class="icon-button" id="theme" aria-label="Switch to light theme" title="Switch theme">☼</button><button class="button" id="export">↓ <span>Save artwork</span></button></div></header>
+<svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5.5 7a7.5 7.5 0 0 1 12-2L20 8M4 16l2.5 3a7.5 7.5 0 0 0 12-2"/></symbol>
+</defs></svg>
+<header class="topbar"><a class="brand" href="./" aria-label="Valkey Grove home"><span class="brand-mark"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M18 31V15M18 24L8 14M18 24L28 14M18 16L12 10M18 16L24 10M8 14V7M8 14H2M28 14V7M28 14H34M18 15V3"/></svg></span><span>grove<span class="brand-by">for valkey</span></span></a><span class="tagline">A STUDY IN CONNECTION</span><div class="top-actions"><span class="connection" id="connection"><i></i> Connecting</span><span class="top-separator"></span><button class="icon-button" id="theme" aria-label="Switch to light theme" title="Switch theme"><svg><use href="#i-sun"/></svg></button><button class="button primary-button" id="export" aria-label="Save artwork"><svg><use href="#i-download"/></svg><span>Save artwork</span></button></div></header>
+<div class="page-intro"><div><div class="eyebrow"><span></span> THE VALKEY OBSERVATORY</div><h1>A living <em>keyspace.</em></h1><p>A thousand little connections. One beautiful whole.</p></div><div class="metrics" aria-label="Cluster statistics"><div><span>KEYS IN THE CLUSTER</span><strong id="total-keys">—</strong><small>Each one finds its place</small></div><div><span>HASH SLOTS ASSIGNED</span><strong id="total-slots">—</strong><small>The roots of the canopy</small></div></div></div>
 <div class="workspace">
 <aside class="sidebar">
- <div class="section-label">WORKSPACE <span>01</span></div><div class="cluster-name">The local grove <span>↗</span></div><p class="muted small" id="cluster-description">Reading your Valkey cluster</p>
+ <div class="section-label">YOUR ECOSYSTEM <span class="small-badge">LOCAL</span></div><div class="cluster-name">The local grove <span class="cluster-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M5.6 18.4 18.4 5.6"/></svg></span></div><p class="muted small" id="cluster-description">Reading your Valkey cluster</p>
+ <div class="divider"></div>
+ <div class="section-label">FIND A KEY</div><form id="search-form"><label class="sr-only" for="key-search">Key name</label><div class="search"><svg><use href="#i-search"/></svg><input id="key-search" autocomplete="off" placeholder="user:2048:profile"><button aria-label="Locate key" title="Locate key"><svg><use href="#i-arrow"/></svg></button></div></form><p class="small muted">Follow a key to its place in the canopy.</p>
  <div class="divider"></div>
  <div class="section-label">CLUSTER NODES <span id="node-count">00</span></div><div id="nodes" class="nodes"><p class="muted small">Waiting for the first branches…</p></div>
- <button id="show-all" class="text-button">↗ Show the whole grove</button>
+ <button id="show-all" class="text-button">View the whole grove <svg><use href="#i-arrow"/></svg></button>
  <div class="divider"></div>
- <div class="section-label">SHAPE THE GROVE</div>
+ <details class="shape-settings"><summary class="section-label">SHAPE THE GROVE <span>+</span></summary>
  <label class="control-label" for="spread">Branch spread <output id="spread-value">30°</output></label><input type="range" id="spread" min="15" max="48" value="30">
  <label class="control-label" for="depth">Fractal depth <output id="depth-value">9</output></label><input type="range" id="depth" min="5" max="11" value="9">
  <div class="toggle-row"><span>Flow of light</span><button id="motion" class="toggle" aria-label="Animate light along branches" aria-pressed="true"><span></span></button></div>
+ </details>
  <div class="divider"></div>
- <div class="section-label">FIND A KEY</div><form id="search-form"><label class="sr-only" for="key-search">Key name</label><div class="search"><span>⌕</span><input id="key-search" autocomplete="off" placeholder="user:2048:profile"><button aria-label="Locate key" title="Locate key">↵</button></div></form><p class="small muted">Follow a key to its place in the canopy.</p>
- <div class="sidebar-bottom"><button id="about" class="text-button">ⓘ How the grove grows</button><div class="local-note"><span class="tiny-dot"></span> Key values are never read</div></div>
+ <div class="sidebar-bottom"><button id="about" class="text-button"><svg><use href="#i-info"/></svg> How the grove grows</button><div class="local-note"><span class="tiny-dot"></span> Key values are never read</div></div>
 </aside>
 <main class="stage" id="stage">
- <div class="stage-heading"><div class="eyebrow"><span></span> DATA, NATURALLY</div><h1>Every key.<br><em>A place to grow.</em></h1><p>Your cluster, seen through a different lens.</p></div>
- <div class="metrics" aria-label="Cluster statistics"><div><strong id="total-keys">—</strong><span>keys in the cluster</span></div><div><strong id="total-slots">—</strong><span>hash slots assigned</span></div></div>
+ <div class="canvas-topline"><span><i></i> THE CANOPY <b>/ 001</b></span><span class="canvas-mode">FRACTAL EXPLORER</span></div>
+ <div class="canvas-caption"><span class="caption-rule"></span><p>Order becomes<br><em>something organic.</em></p></div>
  <canvas id="grove" aria-label="Interactive fractal map of Valkey key locations. Use the node list and key search to explore." role="img"></canvas>
  <div id="empty-state" class="empty-state" hidden><span class="eyebrow">READY TO TAKE ROOT</span><h2>Bring your cluster to life.</h2><p>Run Grove locally to explore your cluster, or open a snapshot from a previous visit.</p><code>go run . -cluster 127.0.0.1:7400</code><button class="button accent" id="import-empty">Open a snapshot ↗</button><p class="small" id="connection-error"></p></div>
  <div class="view-label"><span class="tiny-dot"></span> <span id="view-label">FRACTAL CANOPY</span></div>
  <div class="inspector" id="inspector" hidden><button id="close-inspector" class="close" aria-label="Close key details">×</button><span class="section-label" id="inspector-label">KEY LOCATION</span><strong id="inspector-name"></strong><div id="inspector-info"></div></div>
- <div class="canvas-toolbar"><button id="zoom-out" aria-label="Zoom out">−</button><span id="zoom-label">100%</span><button id="zoom-in" aria-label="Zoom in">+</button><span class="toolbar-divider"></span><button id="reset-view" title="Reset view" aria-label="Reset view">⌖</button></div>
- <div class="canvas-hint">Drag to explore <span>·</span> Scroll to zoom</div>
+ <div class="canvas-toolbar"><button id="zoom-out" aria-label="Zoom out">−</button><span id="zoom-label">100%</span><button id="zoom-in" aria-label="Zoom in">+</button><span class="toolbar-divider"></span><button id="reset-view" title="Reset view" aria-label="Reset view"><svg><use href="#i-reset"/></svg></button></div>
+ <div class="canvas-hint">DRAG TO EXPLORE <span>·</span> SCROLL TO ZOOM</div>
  <div class="stage-footer"><span id="sample-count">Waiting for keyspace</span><span id="last-updated">READ-ONLY EXPLORER</span></div>
 </main>
 </div>
-<footer class="bottom-bar"><span><span class="tiny-dot"></span> Built around Valkey. Inspired by nature.</span><div><button id="refresh">↻ Refresh</button><button id="import">Open snapshot</button><button id="snapshot">Export data ↗</button></div></footer>
+<footer class="bottom-bar"><span><span class="tiny-dot"></span> REAL DATA. NATURAL CONNECTIONS.</span><div><button id="refresh"><svg><use href="#i-refresh"/></svg> Refresh</button><button id="import">Open snapshot</button><button id="snapshot">Export data ↗</button></div></footer>
 <input id="snapshot-file" type="file" accept="application/json,.json" hidden>
 <div id="toast" role="status" aria-live="polite"></div>
 <dialog id="about-dialog"><button class="close" id="close-about" aria-label="Close explanation">×</button><span class="eyebrow">A LITTLE SCIENCE. A LITTLE WONDER.</span><h2>The shape of a keyspace.</h2><p>Each primary node grows its own fractal tree. Its hash slots split into smaller and smaller branches. Every dot is a real key, placed along the branch belonging to its slot.</p><div class="formula">key → CRC16 → hash slot → node → branch</div><p>Keys sharing a <code>{hash-tag}</code> share a slot and grow together. Select a node to isolate its tree, or search for a key to follow its path.</p><p class="small muted">The collector reads CLUSTER SLOTS, DBSIZE and SCAN. It never reads values or changes your data. The sample limit bounds scanning and rendering; counts show the full database size. Scans are not atomic and may differ while keys move or expire.</p><a href="https://valkey.io/topics/cluster-spec/" target="_blank" rel="noreferrer">Read the Valkey cluster specification ↗</a></dialog>
