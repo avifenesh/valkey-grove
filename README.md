@@ -6,9 +6,15 @@ See where your Valkey keys live. Each primary grows a fractal tree. Hash slots s
 
 Go serves the app and reads the cluster. Canvas draws the keyspace. No npm dependencies or frontend build step.
 
+## Formations
+
+Canopy follows the branches outward. Bloom folds them into petals. Spiral winds them around the center. Key search and node selection work in every view.
+
+![Uniform key distribution in the Spiral formation](docs/screenshots/spiral.png)
+
 ## Three key distributions
 
-These screenshots use 12,000 real keys in a temporary six-primary Valkey cluster. All keys were captured. The geometry settings stay the same: 30° spread, depth 9, 100% zoom.
+These screenshots use 12,000 real keys in a temporary six-primary Valkey cluster. All keys were captured. The geometry settings stay the same: Canopy formation, 30° spread, depth 9, 100% zoom.
 
 | Distribution | Keys per node | Occupied slots |
 | --- | --- | --- |
@@ -73,6 +79,7 @@ The local HTTP server binds to loopback, rejects foreign Host and Origin headers
 - Select a primary to isolate its branches.
 - Search a key name to trace its slot and node. A missing sampled key is shown as a calculated location, not proof that the key exists.
 - Click a dot to inspect the observed key. Binary names are labeled as base64.
+- Choose Canopy, Bloom or Spiral. Every formation uses the same key and slot data.
 - Change branch spread or recursion depth; drag and zoom the canvas.
 - Switch light/dark themes or pause motion. Reduced motion is respected.
 - Save the artwork as PNG or export a JSON snapshot. Snapshots contain key names and node addresses; they stay local until you choose to share them.

@@ -14,9 +14,9 @@ function app() {
     ? () => ({addColorStop() {}}) : () => {}});
   function element(id) {
     return {
-      id, hidden: false, value: '', textContent: '', style: {}, dataset: {},
+      id, hidden: false, value: '', textContent: '', style: {}, dataset: {}, attributes: new Map(),
       listeners: new Map(), classList: {add() {}, remove() {}, toggle() {}},
-      append() {}, replaceChildren() {}, setAttribute() {}, setPointerCapture() {},
+      append() {}, replaceChildren() {}, setAttribute(name, value) {this.attributes.set(name, value);}, setPointerCapture() {},
       addEventListener(name, listener) {this.listeners.set(name, listener);},
       getContext: () => ink,
       getBoundingClientRect: () => ({left: 0, top: 0, width: 800, height: 700}),
@@ -102,4 +102,27 @@ test('binary dot keeps its identity despite a colliding text label and refresh',
   await view.open(snapshot([literal]));
   assert.equal(view.evaluate('focus'), null);
   assert.equal(view.elements.get('inspector').hidden, true);
+});
+
+test('formations preserve key identity through projected clicks and refresh', async () => {
+  const view = app();
+  const key = {name: 'garden:{tenant}:leaf', node: 0, slot: hashSlot('garden:{tenant}:leaf')};
+  const original = snapshot([key]);
+  await view.open(original);
+  const positions = [];
+  for (const name of ['canopy', 'bloom', 'spiral']) {
+    view.elements.get('show-all').onclick();
+    view.elements.get('formation-' + name).onclick();
+    assert.equal(view.elements.get('formation-' + name).attributes.get('aria-pressed'), 'true');
+    assert.equal(view.evaluate('data.keys[0].slot'), key.slot);
+    const position = view.evaluate('point(dots[0].x, dots[0].y)');
+    positions.push(JSON.stringify(position));
+    view.elements.get('grove').listeners.get('pointerup')({clientX: position.x, clientY: position.y});
+    assert.equal(view.evaluate('focus.key.name'), key.name);
+    assert.equal(view.evaluate('focus.slot'), key.slot);
+    await view.open(original);
+    assert.equal(view.evaluate('formation'), name);
+    assert.equal(view.evaluate('focus.key.name'), key.name);
+  }
+  assert.equal(new Set(positions).size, 3, 'each formation has a distinct projection');
 });
