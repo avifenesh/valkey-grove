@@ -1,7 +1,7 @@
 import { hashSlot, ownerOf } from './slots.js';
 
 const $ = id => document.getElementById(id);
-const palette = ['#d4eaa2','#80d0b8','#8dbbc9','#bda9d8','#dfa894','#e1cc91'];
+const palette = ['#caeeb0','#69d8bc','#86bced','#b8a4e5','#e8a28d','#e3ce92'];
 const lightPalette = ['#67833a','#308573','#4d8497','#8a72a6','#b3745f','#a4904f'];
 const fmt = number => number.toLocaleString('en-US');
 const canvas = $('grove'), ctx = canvas.getContext('2d');
@@ -10,7 +10,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let data = null, selected = -1, focus = null, paths = [], dots = [], geometry = [], branchGroups = [];
 let width = 0, height = 0, dpr = 1, zoom = 1, pan = {x:0,y:0}, spread = Math.PI/6, depth = 9;
 let motion = !reducedMotion, dark = true, dirty = true, live = true, loading = false, time = 0, lastFrame = 0, toastTimer;
-let drag = null, moved = false, generation = 0;
+let drag = null, moved = false, generation = 0, formation = 'canopy';
 try { dark = localStorage.getItem('grove-theme') !== 'light'; } catch {}
 function setTheme() { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; $('theme').setAttribute('aria-label',`Switch to ${dark?'light':'dark'} theme`); dirty=true; }
 setTheme();
@@ -18,8 +18,34 @@ $('motion').setAttribute('aria-pressed',String(motion));
 function color(i) { return (dark?palette:lightPalette)[i%palette.length]; }
 function toast(message) { $('toast').textContent=message; $('toast').classList.add('visible'); clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3500); }
 function el(tag, text, className) {const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
-function viewScale() {return Math.min((width-62)/800,(height-144)/780)*zoom;}
-function point(x,y) {const scale=viewScale();return {x:width*.5+(x+pan.x)*scale,y:(height-120)*.48+35+(y+pan.y)*scale};}
+function viewScale() {
+ const extent=formation==='bloom'?960:850;
+ return Math.min((width-80)/extent,(height-130)/extent)*zoom;
+}
+function projectWorld(x,y) {
+ if(formation==='canopy')return {x,y};
+ const radius=Math.hypot(x,y),angle=Math.atan2(y,x);
+ if(formation==='spiral'){
+  const turn=angle+1.5*(radius/400)**1.4;
+  return {x:Math.cos(turn)*radius,y:Math.sin(turn)*radius};
+ }
+ const bloomRadius=radius*(1+.14*Math.cos(angle*6));
+ const turn=angle+.36*(radius/400)**1.6;
+ return {x:Math.cos(turn)*bloomRadius,y:Math.sin(turn)*bloomRadius};
+}
+function point(x,y) {
+ const scale=viewScale(),p=projectWorld(x,y);
+ return {x:width*.5+(p.x+pan.x)*scale,y:(height-90)*.5+(p.y+pan.y)*scale};
+}
+function formationLabel() {return `${formation.toUpperCase()} FORMATION`;}
+function setFormation(value) {
+ if(!['canopy','bloom','spiral'].includes(value))return;
+ formation=value;
+ for(const name of ['canopy','bloom','spiral'])$('formation-'+name).setAttribute('aria-pressed',String(name===formation));
+ if(selected===-1)$('view-label').textContent=formationLabel();
+ dirty=true;
+}
+for(const name of ['canopy','bloom','spiral'])$('formation-'+name).onclick=()=>setFormation(name);
 function curveControl(a,b,node,level) {
  const bend=Math.sin(node*1.7+level*.9)*.14;
  return {x:(a.x+b.x)/2-(b.y-a.y)*bend,y:(a.y+b.y)/2+(b.x-a.x)*bend};
@@ -67,7 +93,7 @@ function rebuild() {
   // A stable name-derived offset separates keys in the same hash slot.
   let h=2166136261;for(const ch of key.name){h=Math.imul(h^ch.codePointAt(0),16777619)>>>0;}
   const a=(h%6283)/1000,r=Math.sqrt((h>>>8)%1000)/31.6*5.2;
-  return {x:end.x+Math.cos(a)*r,y:end.y+Math.sin(a)*r,node:key.node,slot,name:keyLabel(key),key};
+  return {x:end.x+Math.cos(a)*r,y:end.y+Math.sin(a)*r,node:key.node,slot,name:keyLabel(key),key,sparkle:h%31===0};
  });
  dirty=true;
 }
@@ -81,29 +107,37 @@ function renderBase() {
   const angle=i/data.nodes.length*Math.PI*2-Math.PI/2;
   const p=point(Math.cos(angle)*220,Math.sin(angle)*220),r=220*scale;
   const wash=ink.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
-  wash.addColorStop(0,color(i)+(dark?'10':'0c'));wash.addColorStop(1,color(i)+'00');
+  wash.addColorStop(0,color(i)+(dark?'16':'0b'));wash.addColorStop(1,color(i)+'00');
   ink.fillStyle=wash;ink.fillRect(p.x-r,p.y-r,r*2,r*2);
  });
  for(let i=0;i<170;i++){const x=((i*7919)%997)/997*width,y=((i*3571)%991)/991*height;ink.fillStyle=dark?'#d9e9c31a':'#45603b14';ink.beginPath();ink.arc(x,y,i%11===0?1:.45,0,Math.PI*2);ink.fill();}
- for(const r of [92,220,388]){ink.beginPath();ink.arc(center.x,center.y,r*scale,0,Math.PI*2);ink.strokeStyle=dark?'#c4dfae0c':'#42652a12';ink.lineWidth=.55;ink.setLineDash(r===388?[]:[1,7]);ink.stroke();}ink.setLineDash([]);
+ for(const r of [110,255,425]){ink.beginPath();ink.arc(center.x,center.y,r*scale,0,Math.PI*2);ink.strokeStyle=dark?'#c4dfae0c':'#42652a12';ink.lineWidth=.55;ink.setLineDash(r===425?[1,5]:[1,9]);ink.stroke();}ink.setLineDash([]);
  // Group by node and depth so glow is a handful of strokes, not thousands of filters.
  for(let node=0;node<data.nodes.length;node++){
   const faded=selected!==-1&&selected!==node;
   for(let level=-1;level<=depth;level++){
    ink.beginPath();for(const branch of branchGroups[node][level+1])strokeBranch(ink,branch.a,branch.b,node,level);
-   ink.globalAlpha=faded?.045:Math.max(.25,.67-level*.037);ink.strokeStyle=color(node);ink.lineWidth=Math.max(.42,(1.65-level*.14)*scale);
-   ink.shadowBlur=dark&&!faded&&level<4?4:0;ink.shadowColor=color(node);ink.stroke();
+   ink.globalAlpha=faded?.045:Math.max(.19,.57-level*.025);ink.strokeStyle=color(node);ink.lineWidth=Math.max(.36,(1.32-level*.10)*scale);
+   ink.shadowBlur=dark&&!faded&&level<3?7:0;ink.shadowColor=color(node);ink.stroke();
   }
  }
  ink.shadowBlur=0;ink.globalAlpha=1;
- for(const dot of dots){const p=point(dot.x,dot.y);ink.globalAlpha=selected!==-1&&selected!==dot.node?.065:(dark?.85:.8);ink.fillStyle=color(dot.node);ink.beginPath();ink.arc(p.x,p.y,Math.max(.62,.94*scale),0,Math.PI*2);ink.fill();}
+ for(const dot of dots){
+  const p=point(dot.x,dot.y),faded=selected!==-1&&selected!==dot.node;
+  ink.globalAlpha=faded?.045:(dark?.85:.8);ink.fillStyle=color(dot.node);
+  ink.beginPath();ink.arc(p.x,p.y,Math.max(.6,.85*scale),0,Math.PI*2);ink.fill();
+  if(dot.sparkle&&!faded){
+   ink.globalAlpha=dark?.13:.065;ink.beginPath();ink.arc(p.x,p.y,3.3*scale,0,Math.PI*2);ink.fill();
+   ink.globalAlpha=dark?.78:.7;ink.fillStyle=dark?'#f3ffe4':color(dot.node);ink.beginPath();ink.arc(p.x,p.y,.75*scale,0,Math.PI*2);ink.fill();
+  }
+ }
  ink.globalAlpha=1;
  data.nodes.forEach((node,i)=>{
-  const a=i/data.nodes.length*Math.PI*2-Math.PI/2,p=point(Math.cos(a)*398,Math.sin(a)*398);
+  const a=i/data.nodes.length*Math.PI*2-Math.PI/2,p=point(Math.cos(a)*429,Math.sin(a)*429);
   ink.globalAlpha=selected!==-1&&selected!==i?.16:1;
-  ink.fillStyle=dark?'#132219e8':'#e9eee3ed';ink.beginPath();ink.roundRect(p.x-31,p.y-11,62,23,11);ink.fill();
+  ink.fillStyle=dark?'#122025df':'#eef3e8ed';ink.beginPath();ink.roundRect(p.x-33,p.y-12,66,25,12);ink.fill();
   ink.strokeStyle=dark?color(i)+'38':color(i)+'35';ink.lineWidth=.6;ink.stroke();
-  ink.font='8px "DM Sans", sans-serif';ink.textAlign='center';ink.fillStyle=color(i);ink.fillText(`NODE ${String(i+1).padStart(2,'0')}`,p.x,p.y+3);
+  ink.font='9px "DM Sans", sans-serif';ink.textAlign='center';ink.fillStyle=dark?color(i):'#3f5c4d';ink.fillText(`NODE ${String(i+1).padStart(2,'0')}`,p.x,p.y+3);
  });
  ink.globalAlpha=1;
  const halo=ink.createRadialGradient(center.x,center.y,0,center.x,center.y,46*scale);halo.addColorStop(0,dark?'#d4ecac30':'#54753e22');halo.addColorStop(1,'#00000000');ink.fillStyle=halo;ink.fillRect(center.x-46*scale,center.y-46*scale,92*scale,92*scale);
@@ -124,7 +158,7 @@ function frame(now) {
  if(dirty){renderBase();dirty=false;}
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.drawImage(layer,0,0,width,height);
  if(!motion||!data)return;
- for(const path of paths){if(selected!==-1&&selected!==path.node)continue;const t=((time/8500+path.offset)%1)*(path.line.length-1),i=Math.floor(t),f=t-i;const a=path.line[i],b=path.line[i+1];if(!b)continue;const q=curvePoint(a,b,curveControl(a,b,path.node,i-1),f),p=point(q.x,q.y);ctx.globalAlpha=Math.sin((t/(path.line.length-1))*Math.PI)*.9;ctx.fillStyle=color(path.node);ctx.shadowColor=color(path.node);ctx.shadowBlur=7;ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fill();}ctx.shadowBlur=0;ctx.globalAlpha=1;
+ for(const path of paths){if(selected!==-1&&selected!==path.node)continue;const t=((time/8500+path.offset)%1)*(path.line.length-1),i=Math.floor(t),f=t-i;const a=path.line[i],b=path.line[i+1];if(!b)continue;const c=curveControl(a,b,path.node,i-1),p=curvePoint(point(a.x,a.y),point(b.x,b.y),point(c.x,c.y),f);ctx.globalAlpha=Math.sin((t/(path.line.length-1))*Math.PI)*.9;ctx.fillStyle=color(path.node);ctx.shadowColor=color(path.node);ctx.shadowBlur=7;ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fill();}ctx.shadowBlur=0;ctx.globalAlpha=1;
 }
 new ResizeObserver(()=>{const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=layer.width=Math.round(width*dpr);canvas.height=layer.height=Math.round(height*dpr);dirty=true;}).observe(canvas);
 requestAnimationFrame(frame);
@@ -161,7 +195,7 @@ async function refresh(manual=false) {
  catch(error){if(started!==generation||!live)return;$('connection').replaceChildren(el('i'),document.createTextNode(data?'Connection lost':'Not connected'));$('connection').classList.add('error');if(!data){$('empty-state').hidden=false;$('connection-error').textContent=error.message;$('cluster-description').textContent='No cluster connected';}else{$('last-updated').textContent='CONNECTION LOST · SHOWING LAST CAPTURE';}if(manual)toast(error.message);}
  finally{loading=false;$('refresh').disabled=false;}
 }
-function selectNode(i) {selected=selected===i?-1:i;focus=null;dirty=true;document.querySelectorAll('.node').forEach((e,j)=>{e.classList.toggle('selected',j===selected);e.setAttribute('aria-pressed',String(j===selected))});$('view-label').textContent=selected===-1?'FRACTAL CANOPY':`NODE ${String(i+1).padStart(2,'0')} · ISOLATED`;if(selected<0){$('inspector').hidden=true;return;}const node=data.nodes[i];$('inspector-label').textContent='PRIMARY NODE';$('inspector-name').textContent=`Node ${String(i+1).padStart(2,'0')}`;$('inspector-info').replaceChildren(el('p',node.address),el('p',`${fmt(node.keys)} keys · ${node.replicas||0} replicas`),el('p',`Slots ${node.slots.map(r=>r.join('–')).join(', ')}`),el('span',node.id,'node-id'));if(node.error)$('inspector-info').append(el('p',node.error,'error-text'));$('inspector').hidden=false;}
+function selectNode(i) {selected=selected===i?-1:i;focus=null;dirty=true;document.querySelectorAll('.node').forEach((e,j)=>{e.classList.toggle('selected',j===selected);e.setAttribute('aria-pressed',String(j===selected))});$('view-label').textContent=selected===-1?formationLabel():`NODE ${String(i+1).padStart(2,'0')} · ISOLATED`;if(selected<0){$('inspector').hidden=true;return;}const node=data.nodes[i];$('inspector-label').textContent='PRIMARY NODE';$('inspector-name').textContent=`Node ${String(i+1).padStart(2,'0')}`;$('inspector-info').replaceChildren(el('p',node.address),el('p',`${fmt(node.keys)} keys · ${node.replicas||0} replicas`),el('p',`Slots ${node.slots.map(r=>r.join('–')).join(', ')}`),el('span',node.id,'node-id'));if(node.error)$('inspector-info').append(el('p',node.error,'error-text'));$('inspector').hidden=false;}
 function locate(name,notify=true,exactKey=null) {
  if(!data){if(notify)toast('Connect a cluster or open a snapshot first.');return;}if(!name.length)return;
  const key=exactKey??data.keys.find(k=>!k.encoding&&k.name===name),slot=key?.slot??hashSlot(name),owner=ownerOf(slot,data.nodes),node=key?.node??owner;
@@ -172,7 +206,7 @@ function locate(name,notify=true,exactKey=null) {
  $('inspector').hidden=false;
 }
 $('search-form').addEventListener('submit',e=>{e.preventDefault();locate($('key-search').value)});
-$('show-all').onclick=()=>{selected=-1;focus=null;$('inspector').hidden=true;$('view-label').textContent='FRACTAL CANOPY';document.querySelectorAll('.node').forEach(e=>{e.classList.remove('selected');e.setAttribute('aria-pressed','false')});dirty=true;};
+$('show-all').onclick=()=>{selected=-1;focus=null;$('inspector').hidden=true;$('view-label').textContent=formationLabel();document.querySelectorAll('.node').forEach(e=>{e.classList.remove('selected');e.setAttribute('aria-pressed','false')});dirty=true;};
 $('close-inspector').onclick=()=>$('show-all').click();
 $('spread').oninput=e=>{spread=Number(e.target.value)*Math.PI/180;$('spread-value').textContent=`${e.target.value}°`;rebuild()};
 $('depth').oninput=e=>{depth=Number(e.target.value);$('depth-value').textContent=e.target.value;rebuild()};
@@ -186,7 +220,7 @@ canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-dra
 canvas.addEventListener('pointerup',e=>{if(!moved&&data){const rect=canvas.getBoundingClientRect();let closest=null,best=14;for(const dot of dots){if(selected!==-1&&dot.node!==selected)continue;const p=point(dot.x,dot.y);const distance=Math.hypot(p.x-(e.clientX-rect.left),p.y-(e.clientY-rect.top));if(distance<best){best=distance;closest=dot}}if(closest){$('key-search').value=closest.name;locate(closest.name,true,closest.key)}}drag=null;});
 canvas.addEventListener('pointercancel',()=>{drag=null});
 function download(blob,name){const url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-$('export').onclick=()=>{if(!data){toast('Connect a cluster or open a snapshot first.');return;}const art=document.createElement('canvas');art.width=canvas.width;art.height=canvas.height;const c=art.getContext('2d');c.fillStyle=dark?'#101c17':'#e9eee3';c.fillRect(0,0,art.width,art.height);c.drawImage(canvas,0,0);c.fillStyle=dark?'#d4ecac':'#49662d';c.font=`${24*dpr}px Georgia`;c.fillText('valkey grove',30*dpr,40*dpr);c.font=`${10*dpr}px sans-serif`;c.fillText(`${fmt(data.keys.length)} keys · ${data.nodes.length} nodes · ${new Date(data.capturedAt).toLocaleDateString()}`,30*dpr,60*dpr);art.toBlob(blob=>{if(blob)download(blob,'valkey-grove.png')},'image/png');};
+$('export').onclick=()=>{if(!data){toast('Connect a cluster or open a snapshot first.');return;}const art=document.createElement('canvas');art.width=canvas.width;art.height=canvas.height;const c=art.getContext('2d');c.fillStyle=dark?'#0b1317':'#f1f3e9';c.fillRect(0,0,art.width,art.height);c.drawImage(canvas,0,0);c.fillStyle=dark?'#d4ecac':'#49662d';c.font=`${24*dpr}px Georgia`;c.fillText('valkey grove',30*dpr,40*dpr);c.font=`${10*dpr}px sans-serif`;c.fillText(`${fmt(data.keys.length)} keys · ${data.nodes.length} nodes · ${new Date(data.capturedAt).toLocaleDateString()}`,30*dpr,60*dpr);art.toBlob(blob=>{if(blob)download(blob,'valkey-grove.png')},'image/png');};
 $('snapshot').onclick=()=>{if(!data){toast('There is no cluster data to export yet.');return;}download(new Blob([JSON.stringify({...data,source:'snapshot'},null,2)],{type:'application/json'}),'valkey-grove-snapshot.json');toast('Snapshot saved. It contains key names and node addresses.');};
 $('import').onclick=$('import-empty').onclick=()=>$('snapshot-file').click();
 $('snapshot-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const s=validateSnapshot(JSON.parse(await file.text()));generation++;live=false;updateData(s);toast('Snapshot opened locally in your browser.')}catch(error){toast(error.message)}finally{e.target.value=''}};
