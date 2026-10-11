@@ -1,0 +1,4 @@
+.local/
+grove
+*.tar.gz
+__pycache__/
