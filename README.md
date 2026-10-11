@@ -1,12 +1,48 @@
 # Valkey Grove
 
-A fractal map of a real Valkey cluster. Each primary grows a tree. Hash slots determine the branches; real keys form the leaves.
+See where your Valkey keys live. Each primary grows a fractal tree. Hash slots shape its branches. Keys form the leaves.
+
+![Valkey Grove with an even distribution across six nodes](docs/screenshots/uniform.png)
+
+Go serves the app and reads the cluster. Canvas draws the keyspace. No npm dependencies or frontend build step.
+
+## Three key distributions
+
+These screenshots use 12,000 real keys in a temporary six-primary Valkey cluster. All keys were captured. The geometry settings stay the same: 30° spread, depth 9, 100% zoom.
+
+| Distribution | Keys per node | Occupied slots |
+| --- | --- | --- |
+| Uniform | 2,004 / 2,010 / 1,984 / 1,981 / 2,004 / 2,017 | 7,992 |
+| Hot node | 10,800 / 235 / 239 / 253 / 234 / 239 | 3,718 |
+| Hash tags | 2,500 / 2,000 / 500 / 3,500 / 3,000 / 500 | 24 |
+
+### Uniform
+
+Sequential key names spread across the cluster. Every tree carries about 2,000 keys.
+
+### Hot node
+
+90% of keys belong to node 01. The other five nodes share the remaining 10%. These are distinct keys spread over many slots, not one shared hash tag.
+
+![90 percent of keys concentrated on the first Valkey node](docs/screenshots/hot-node.png)
+
+### Hash tags
+
+24 tenant tags group 500 keys each into one slot. The leaves form small, dense clusters. The branches still show the full slot space.
+
+![Twelve thousand keys grouped into 24 hash slots by tenant tags](docs/screenshots/hash-tags.png)
+
+The header counts **assigned** hash slots. The table counts **occupied** slots. These are different: the cluster owns all 16,384 slots in every screenshot, but some contain no keys.
+
+[Capture receipts](docs/gallery-receipts.json) record the counts, timestamps and snapshot hashes. These are key-location patterns; Grove does not measure request traffic or throughput.
 
 ## Run the local grove
 
 Requires Go 1.23+, Python 3, `valkey-server` and `valkey-cli` on Linux.
 
 ```sh
+git clone https://github.com/avifenesh/valkey-grove.git
+cd valkey-grove
 python3 scripts/local-cluster.py up
 ```
 
@@ -43,6 +79,16 @@ The local HTTP server binds to loopback, rejects foreign Host and Origin headers
 
 The hosted edition opens a saved capture of this development cluster and supports local snapshot imports. It is labeled **Saved snapshot**. Use the local app for live data. Imported data is processed in the browser and is not uploaded.
 
+## Reproduce the gallery
+
+```sh
+python3 scripts/gallery.py
+```
+
+This creates six temporary nodes on ports 7600–7605 and a temporary collector on 4188. It writes snapshots and a receipt to `.local/gallery/`, then stops its processes and removes its temporary cluster. It does not change your running Grove cluster.
+
+Open Grove, choose **Open snapshot**, and load `uniform.json`, `hot-node.json` or `hash-tags.json`. The screenshots use the dark theme at 1600 × 1100. Use `--base-port`, `--http-port` and `--output` to change the ports or output directory.
+
 ## Validate
 
 ```sh
@@ -50,6 +96,8 @@ GROVE_TEST_PORT=7400 go test -race ./...
 GROVE_TEST_PORT=7400 node --test test/*.test.mjs
 go vet ./...
 ```
+
+CI runs the CPU checks. Set `GROVE_TEST_PORT` locally to also run the real-cluster tests.
 
 The tests compare text, Unicode, empty keys, and hash tags with a real Valkey cluster. A collector integration test writes and removes one temporary binary key in the dedicated test cluster and verifies its identity and slot survive JSON transport. HTTP tests cover the local access boundary and connection failure.
 

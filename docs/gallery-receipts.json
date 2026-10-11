@@ -1,0 +1,81 @@
+{
+  "keyCount": 12000,
+  "primaries": 6,
+  "scenarios": [
+    {
+      "name": "uniform",
+      "capturedAt": "2026-10-11T22:36:35Z",
+      "keys": 12000,
+      "occupiedSlots": 7992,
+      "nodeKeys": [
+        2004,
+        2010,
+        1984,
+        1981,
+        2004,
+        2017
+      ],
+      "observedNodeKeys": [
+        2004,
+        2010,
+        1984,
+        1981,
+        2004,
+        2017
+      ],
+      "sha256": "ea6cdfbc572b378cfd4e2f0eb103b4185022dcd6a95f908daf235f1e194e4f53",
+      "captureSampleLimit": 72000,
+      "complete": true
+    },
+    {
+      "name": "hot-node",
+      "capturedAt": "2026-10-11T22:36:35Z",
+      "keys": 12000,
+      "occupiedSlots": 3718,
+      "nodeKeys": [
+        10800,
+        235,
+        239,
+        253,
+        234,
+        239
+      ],
+      "observedNodeKeys": [
+        10800,
+        235,
+        239,
+        253,
+        234,
+        239
+      ],
+      "sha256": "69aeb846f3eaefee3118ca1bab2dfd0908dc1803ac63cef72f5f515c3d44d9a1",
+      "captureSampleLimit": 72000,
+      "complete": true
+    },
+    {
+      "name": "hash-tags",
+      "capturedAt": "2026-10-11T22:36:36Z",
+      "keys": 12000,
+      "occupiedSlots": 24,
+      "nodeKeys": [
+        2500,
+        2000,
+        500,
+        3500,
+        3000,
+        500
+      ],
+      "observedNodeKeys": [
+        2500,
+        2000,
+        500,
+        3500,
+        3000,
+        500
+      ],
+      "sha256": "7021013419d74f4437cf731711a57fc6662f965b50ab46bc19f87808910f07f3",
+      "captureSampleLimit": 72000,
+      "complete": true
+    }
+  ]
+}
